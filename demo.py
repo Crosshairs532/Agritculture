@@ -1,4 +1,4 @@
-from Agriculture.src.service.AgricultureService import AgricultureService
+from Agriculture.src.service.FarmService import AgricultureService
 import os
 from dotenv import load_dotenv
 load_dotenv(override=True)

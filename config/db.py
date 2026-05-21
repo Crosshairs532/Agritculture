@@ -1,6 +1,6 @@
-from Agriculture.config.configFiles import ConfigFiles
+from config.configFiles import ConfigFiles
 from sqlalchemy import create_engine
-from Agriculture.src.logger import get_logger
+from src.logger import get_logger
 logger = get_logger("DBConnection")
 
 class DBConnection:
