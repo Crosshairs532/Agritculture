@@ -8,7 +8,6 @@ logger = get_logger("AgricultureService")
 class AgricultureService:
     def __init__(self):
         self.db_connection = DBConnection()
-        logger.info(f"URI : {self.db_connection.config_files.DATABASE_URI}")
     def _get_data(self):
         try:
             df = pd.read_sql('SELECT * FROM vw_harvest_full LIMIT 5', self.db_connection.engine)
