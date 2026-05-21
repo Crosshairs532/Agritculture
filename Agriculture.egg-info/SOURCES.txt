@@ -1,0 +1,6 @@
+setup.py
+Agriculture.egg-info/PKG-INFO
+Agriculture.egg-info/SOURCES.txt
+Agriculture.egg-info/dependency_links.txt
+Agriculture.egg-info/requires.txt
+Agriculture.egg-info/top_level.txt

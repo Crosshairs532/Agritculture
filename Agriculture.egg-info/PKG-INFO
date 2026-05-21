@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: Agriculture
+Version: 0.0.1
+Summary: Agriculture Data Science Project
+Author: Md. Samsul Arefin
+Requires-Dist: fastapi
+Requires-Dist: uvicorn
+Requires-Dist: pandas
+Requires-Dist: sqlalchemy
+Requires-Dist: pymysql
+Requires-Dist: numpy
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: summary

@@ -4,5 +4,3 @@ pandas
 sqlalchemy
 pymysql
 numpy
-python-dotenv=1.2.2
--e .
