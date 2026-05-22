@@ -6,4 +6,5 @@ class FarmQuery(BaseModel):
     farm_type: Optional[str] = None
     year: Optional[int] = None
     season: Optional[str] = None
-
+    market_type:Optional[str] = None
+    crop_category:Optional[str] = None

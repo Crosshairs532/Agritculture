@@ -1,3 +1,7 @@
+from warnings import filters
+
+from fastapi import HTTPException
+
 from config.db import DBConnection
 from src.logger import get_logger
 from src.exception import CustomException
@@ -21,6 +25,7 @@ class FarmService:
             logger.error(f"Error in _get_data: {e}")
             raise CustomException("Error in _get_data",e)
     def get_farm_summary(self, **filters):
+
         """
             region 
             farm_type
@@ -73,3 +78,49 @@ class FarmService:
         except Exception as e:
             logger.error(f"Error in get_farm_summary: {e}")
             raise CustomException("Error in get_farm_summary",e)
+        
+
+    def get_Single_Farm_Performance(self, farm_id: str, **filters):
+        logger.info(f"Fetching performance for farm_id: {farm_id}")
+
+        query_filters = {}
+        try:
+            single_farm_query = f"SELECT * from dim_farm WHERE farm_id = '{farm_id}'"
+            single_farm_df = pd.read_sql(single_farm_query, self.db_connection.engine)
+
+
+            if single_farm_df.empty:
+                raise CustomException(f"Farm ID {farm_id} not found", 404)
+            farm_name = single_farm_df["farm_name"].values[0]   
+            for key ,val in filters.items():
+                if val is not None:
+                    query_filters[key] = val
+            
+            vw_harvest_full_farm = pd.read_sql(f"SELECT * from vw_harvest_full WHERE farm_name = '{farm_name}'", self.db_connection.engine)
+
+            owner_name = vw_harvest_full_farm["owner_name"].values[0]
+            region = vw_harvest_full_farm["region"].values[0]
+
+            for key, val in query_filters.items():
+                if val is not None and key in vw_harvest_full_farm.columns:
+                    vw_harvest_full_farm = vw_harvest_full_farm[vw_harvest_full_farm[key] == val]
+
+            performance_list = vw_harvest_full_farm[[
+                'crop_name', 'year', 'market_type', 
+                'quantity_sold_ton', 'revenue_bdt', 'net_profit_bdt', 'quality_grade'
+            ]].to_dict(orient='records')
+
+            response = {
+                'farm_id': farm_id,
+                'farm_name': farm_name,
+                'owner_name': owner_name,
+                'region': region,
+                "filters_applied:": query_filters,
+                'performance_data': performance_list
+            }
+
+            return response
+        
+        except Exception as e:
+            logger.error(f"Error in get_Single_Farm_Performance: {e}")
+            raise CustomException("Error in get_Single_Farm_Performance",e)
