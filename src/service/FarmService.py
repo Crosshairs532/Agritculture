@@ -48,9 +48,7 @@ class FarmService:
                 logger.info(f"Applying filters: {query_filters}")
                 for key, val in query_filters.items():
                     df = df[df[key] == val]
-            # if filters.get("year"):
-            #     query_filters["year"] = filters["year"]
-            
+        
 
             if df.empty:
                 return {"total_farms": 0, "filters_applied": filters, "data": []}
