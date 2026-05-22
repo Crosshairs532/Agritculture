@@ -76,7 +76,6 @@ class FarmService:
         except Exception as e:
             logger.error(f"Error in get_farm_summary: {e}")
             raise CustomException("Error in get_farm_summary",e)
-        
     def get_Single_Farm_Performance(self, farm_id: str, **filters):
         
         logger.info(f"Fetching performance for farm_id: {farm_id}")
@@ -182,3 +181,54 @@ class FarmService:
         except Exception as e:
             logger.error(f"Error in get_top_farms: {e}")
             raise CustomException("Error in get_top_farms",e)
+    
+    def get_farm_loss_analysis(self, **filters):
+        query_filters = {}
+
+        try:
+            df = self._get_data("vw_harvest_full")
+
+            for key, val in filters.items():
+                if val is not None and key in df.columns:
+                    query_filters[key] = val
+                    df = df[df[key] == val]
+
+            if df.empty:
+                return {
+                    "filters_applied": query_filters,
+                    "summary": {"total_harvested_ton": 0, "total_lost_ton": 0, "overall_loss_pct": 0},
+                    "breakdown": []
+                }
+            total_harvested = df['quantity_harvested_ton'].sum()
+            total_lost = df['quantity_lost_ton'].sum()
+            overall_loss_pct = (total_lost / total_harvested * 100) if total_harvested > 0 else 0
+            result = {
+                "total_harvested_ton": round(total_harvested, 2),
+                "total_lost_ton": round(total_lost, 2),
+                "overall_loss_pct": round(overall_loss_pct, 2)
+            }
+            breakdown_df = df.groupby(['region', 'crop_category', 'quality_grade']).agg({
+                'quantity_harvested_ton': 'sum',
+                'quantity_lost_ton': 'sum',
+                'pesticide_residue': lambda x: x.mode()[0] if not x.empty else "N/A"
+            }).reset_index()
+            breakdown_df['loss_pct'] = (breakdown_df['quantity_lost_ton'] / breakdown_df['quantity_harvested_ton'] * 100).round(2)
+            
+        
+            breakdown_df = breakdown_df.rename(columns={'quantity_lost_ton': 'total_lost_ton'})
+            
+            final_breakdown = breakdown_df[[
+                'region', 'crop_category', 'quality_grade', 
+                'total_lost_ton', 'loss_pct', 'pesticide_residue'
+            ]]
+
+            return {
+                "filters_applied": query_filters,
+                "summary": result,
+                "breakdown": final_breakdown.to_dict(orient='records')
+            }
+
+
+        except Exception as e:
+            logger.error(f"Error in get_farm_loss_analysis: {e}")
+            raise CustomException("Error in get_farm_loss_analysis",e)

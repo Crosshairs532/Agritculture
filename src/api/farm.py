@@ -1,6 +1,6 @@
 from src.service.FarmService import FarmService
 from fastapi import APIRouter, Depends
-from src.schemas.farm_schemas import FarmQuery, FarmQueryMetric
+from src.schemas.farm_schemas import FarmQuery, FarmQueryMetric, FarmLossQuery
 from dotenv import load_dotenv
 load_dotenv(override=True)
 
@@ -17,6 +17,7 @@ async def get_single_farm_performance(farm_id: str, query_params: FarmQuery = De
 
 @router.get('/top')
 async def get_top_farms(query_params: FarmQueryMetric = Depends()):
-
-    print(query_params)
     return farm_service.get_top_farms(**query_params.dict())
+@router.get('/loss-analysis')
+async def get_farm_loss_analysis(query_params: FarmLossQuery = Depends()):
+    return farm_service.get_farm_loss_analysis(**query_params.dict())

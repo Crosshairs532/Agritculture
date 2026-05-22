@@ -19,3 +19,6 @@ class MetricEnum(str, Enum):
 class FarmQueryMetric(FarmQuery):
     metric: Optional[MetricEnum] = None
     limit: Optional[int] = 10
+
+class FarmLossQuery(FarmQuery):
+    quality_grade: Optional[str] = None
