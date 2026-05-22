@@ -79,8 +79,8 @@ class FarmService:
             logger.error(f"Error in get_farm_summary: {e}")
             raise CustomException("Error in get_farm_summary",e)
         
-
     def get_Single_Farm_Performance(self, farm_id: str, **filters):
+        
         logger.info(f"Fetching performance for farm_id: {farm_id}")
 
         query_filters = {}
@@ -124,3 +124,63 @@ class FarmService:
         except Exception as e:
             logger.error(f"Error in get_Single_Farm_Performance: {e}")
             raise CustomException("Error in get_Single_Farm_Performance",e)
+
+    def get_top_farms(self, **filters):
+        """
+            metric 
+            limit 
+            --------
+            region
+            farm_type
+            year
+        """
+        query_filters = {}
+        metric_map = {
+            "profit": "net_profit_bdt",
+            "revenue": "revenue_bdt",
+            "yield": "actual_yield_ton_per_ha"
+        }
+        metric = filters.pop("metric", "profit") 
+        if metric is None: 
+            metric = "profit"
+
+        logger.info(f"Fetching top farms based on metric: {metric}")
+        limit = filters.pop("limit", 10)
+        # get query metric  or default profit
+        metric_column = metric_map.get(metric, "net_profit_bdt") 
+        try: 
+            df = self._get_data("vw_harvest_full")
+
+            # filtered by year, region, farm_type
+            for key, val in filters.items():
+                if val is not None and key in df.columns:
+                    query_filters[key] = val
+                    df = df[df[key] == val]
+
+            if df.empty:
+                return {"metric": metric, "filters_applied": query_filters, "rankings": []}
+
+            agg_type = 'mean' if metric == 'yield' else 'sum'
+            ranking_df = df.groupby(['farm_name', 'region', 'farm_type']).agg({
+                metric_column: agg_type,
+                'revenue_bdt': 'sum',    
+                'net_profit_bdt': 'sum'  
+            }).reset_index()
+            ranking_df = ranking_df.sort_values(by=metric_column, ascending=False).head(limit)
+            ranking_df['rank'] = range(1, len(ranking_df) + 1)
+            ranking_df = ranking_df.rename(columns={
+                'revenue_bdt': 'total_revenue_bdt'
+            })
+
+            query_filters["limit"] = limit
+            result = {
+                "metric":metric, 
+                "filters_applied": query_filters,
+                "rankings":ranking_df.round(2).to_dict(orient='records')
+            }
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error in get_top_farms: {e}")
+            raise CustomException("Error in get_top_farms",e)
