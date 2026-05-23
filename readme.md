@@ -152,7 +152,7 @@ services:
 Run:
 
 ```bash
-docker-compose up
+docker compose up
 ```
 
 _Note: This will automatically pull the image from Docker Hub and start the service._
