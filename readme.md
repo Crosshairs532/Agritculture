@@ -51,7 +51,7 @@
 | Database Layer         | SQLAlchemy + PyMySQL                 |
 | Validation             | Pydantic (BaseModels) & Python Enums |
 | Environment Management | python-dotenv                        |
-| Containerization       | Docker (Bonus Implementation)        |
+| Containerization       | Docker                               |
 
 ---
 
