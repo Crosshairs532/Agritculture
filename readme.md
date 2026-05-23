@@ -74,15 +74,19 @@
 
 ---
 
-## 2. Clone the Project
+# ⚙️ Setup & Installation
+
+## 1. Clone the Project
 
 ```bash
 git clone https://github.com/Crosshairs532/Agritculture.git
 ```
 
-## 3. Configuration
+---
 
-Create a `.env` file in the root directory and add the following database credentials:
+## 2. Configure Environment Variables
+
+Create a `.env` file in the root directory:
 
 ```env
 HOST=
@@ -94,7 +98,7 @@ PASSWORD=
 
 ---
 
-## 4. Install Dependencies
+## 3. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -104,25 +108,33 @@ pip install -r requirements.txt
 
 # 🏃 Running the Application
 
-## Option A: Local Execution from the root folder
+## Option A: Run Locally
+
+From the project root directory:
 
 ```bash
- python main.py
+python main.py
 ```
 
-The API will be available at:
+The API will run at:
 
 ```text
 http://localhost:8000
 ```
 
-## Option B: Using Docker
+---
+
+## Option B: Run Using Docker
 
 I have already pre-built the Docker image and pushed it to Docker Hub. You can run the application without building it from source.
 
-```bash
+### Docker Compose
 
-version: '3.8'
+Create a `docker-compose.yml` file:
+
+```yaml
+version: "3.8"
+
 services:
   api:
     image: crosshairs532/agriculture:latest
@@ -134,20 +146,33 @@ services:
     restart: always
 ```
 
-1.  **Ensure your `.env` file is ready** in the root directory with the database credentials.
-2.  **Pull and Run via Docker Compose:**
+1. **Ensure your .env file is ready** in the root directory with the database credentials.
+2. **Pull and Run via Docker Compose:**
 
-    ```bash
-    docker-compose up
-    ```
+Run:
 
-    _Note: This will automatically pull the image from Docker Hub and start the service._
+```bash
+docker-compose up
+```
 
-3.  **Alternative: Running via Docker CLI (without Compose):**
+_Note: This will automatically pull the image from Docker Hub and start the service._
 
-    ```bash
-    docker run -p 8000:8000 --env-file .env crosshairs532/agriculture:latest
-    ```
+---
 
-4.  **Access the API:**
-    - Swagger UI: `http://localhost:8000/docs`
+## Alternative: Docker CLI
+
+```bash
+docker run -p 8000:8000 --env-file .env crosshairs532/agriculture:latest
+```
+
+---
+
+# API Documentation
+
+FastAPI automatically generates Swagger documentation.
+
+After starting the server, visit:
+
+- Swagger UI: `http://localhost:8000/docs`
+
+---
