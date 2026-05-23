@@ -46,8 +46,10 @@ class FarmService:
 
             if query_filters:
                 logger.info(f"Applying filters: {query_filters}")
-                for key, val in query_filters.items():
-                    df = df[df[key] == val]
+
+                df = self._apply_filters(df, query_filters)
+                # for key, val in query_filters.items():
+                #     df = df[df[key] == val]
         
 
             if df.empty:
@@ -88,6 +90,7 @@ class FarmService:
 
             if single_farm_df.empty:
                 raise CustomException(f"Farm ID {farm_id} not found", 404)
+            
             farm_name = single_farm_df["farm_name"].values[0]   
             for key ,val in filters.items():
                 if val is not None:
@@ -98,9 +101,10 @@ class FarmService:
             owner_name = vw_harvest_full_farm["owner_name"].values[0]
             region = vw_harvest_full_farm["region"].values[0]
 
-            for key, val in query_filters.items():
-                if val is not None and key in vw_harvest_full_farm.columns:
-                    vw_harvest_full_farm = vw_harvest_full_farm[vw_harvest_full_farm[key] == val]
+            # for key, val in query_filters.items():
+            #     if val is not None and key in vw_harvest_full_farm.columns:
+            #         vw_harvest_full_farm = vw_harvest_full_farm[vw_harvest_full_farm[key] == val]
+            vw_harvest_full_farm = self._apply_filters(vw_harvest_full_farm, query_filters)
 
             performance_list = vw_harvest_full_farm[[
                 'crop_name', 'year', 'market_type', 
@@ -152,7 +156,8 @@ class FarmService:
             for key, val in filters.items():
                 if val is not None and key in df.columns:
                     query_filters[key] = val
-                    df = df[df[key] == val]
+
+            df = self._apply_filters(df, query_filters)
 
             if df.empty:
                 return {"metric": metric, "filters_applied": query_filters, "rankings": []}
@@ -181,17 +186,43 @@ class FarmService:
         except Exception as e:
             logger.error(f"Error in get_top_farms: {e}")
             raise CustomException("Error in get_top_farms",e)
+    def _apply_filters(self, df, filters):
+        query_parts = []
+        for key, val in filters.items():
+            if val is not None and key in df.columns:
+                if isinstance(val, str):
+                    query_parts.append(f"{key} == '{val}'")
+                else:
+                    query_parts.append(f"{key} == {val}") # for numeric values
     
+        if query_parts:
+            query_string = " and ".join(query_parts)
+            return df.query(query_string)
+        return df
+    
+
     def get_farm_loss_analysis(self, **filters):
+
+        """
+            quantity_harvested_ton
+            quantity_lost_ton
+            quantity_sold_ton
+            net_profit_bdt
+        """
         query_filters = {}
 
         try:
             df = self._get_data("vw_harvest_full")
 
+
             for key, val in filters.items():
-                if val is not None and key in df.columns:
+                if val is not None:
                     query_filters[key] = val
-                    df = df[df[key] == val]
+            df = self._apply_filters(df, query_filters)
+            # for key, val in filters.items():
+            #     if val is not None and key in df.columns:
+            #         query_filters[key] = val
+            #         df = df[df[key] == val]
 
             if df.empty:
                 return {
@@ -202,12 +233,16 @@ class FarmService:
             total_harvested = df['quantity_harvested_ton'].sum()
             total_lost = df['quantity_lost_ton'].sum()
             overall_loss_pct = (total_lost / total_harvested * 100) if total_harvested > 0 else 0
+
+            # overall summary
             result = {
                 "total_harvested_ton": round(total_harvested, 2),
                 "total_lost_ton": round(total_lost, 2),
                 "overall_loss_pct": round(overall_loss_pct, 2)
             }
-            breakdown_df = df.groupby(['region', 'crop_category', 'quality_grade']).agg({
+
+        # summary by filters
+            breakdown_df = df.groupby(['region', 'crop_category', 'quality_grade', 'season']).agg({
                 'quantity_harvested_ton': 'sum',
                 'quantity_lost_ton': 'sum',
                 'pesticide_residue': lambda x: x.mode()[0] if not x.empty else "N/A"
@@ -218,7 +253,7 @@ class FarmService:
             breakdown_df = breakdown_df.rename(columns={'quantity_lost_ton': 'total_lost_ton'})
             
             final_breakdown = breakdown_df[[
-                'region', 'crop_category', 'quality_grade', 
+                'region', 'crop_category', 'quality_grade', 'season',
                 'total_lost_ton', 'loss_pct', 'pesticide_residue'
             ]]
 

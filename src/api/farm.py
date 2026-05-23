@@ -18,6 +18,7 @@ async def get_single_farm_performance(farm_id: str, query_params: FarmQuery = De
 @router.get('/top')
 async def get_top_farms(query_params: FarmQueryMetric = Depends()):
     return farm_service.get_top_farms(**query_params.dict())
+
 @router.get('/loss-analysis')
 async def get_farm_loss_analysis(query_params: FarmLossQuery = Depends()):
     return farm_service.get_farm_loss_analysis(**query_params.dict())
