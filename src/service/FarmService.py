@@ -1,11 +1,11 @@
 from warnings import filters
 
 from fastapi import HTTPException
-
 from config.db import DBConnection
 from src.logger import get_logger
 from src.exception import CustomException
 import pandas as pd
+from src.constants import ACCEPTED_VALUES
 import sys
 
 logger = get_logger("FarmService")
@@ -114,10 +114,10 @@ class FarmService:
             response = {
                 'farm_id': farm_id,
                 'farm_name': farm_name,
-                'owner_name': owner_name,
+                'owner': owner_name,       
                 'region': region,
-                "filters_applied:": query_filters,
-                'performance_data': performance_list
+                "filters_applied": query_filters, 
+                'performance': performance_list   
             }
 
             return response
@@ -125,7 +125,6 @@ class FarmService:
         except Exception as e:
             logger.error(f"Error in get_Single_Farm_Performance: {e}")
             raise CustomException("Error in get_Single_Farm_Performance",e)
-
     def get_top_farms(self, **filters):
         """
             metric 
@@ -188,19 +187,23 @@ class FarmService:
             raise CustomException("Error in get_top_farms",e)
     def _apply_filters(self, df, filters):
         query_parts = []
+
         for key, val in filters.items():
-            if val is not None and key in df.columns:
-                if isinstance(val, str):
-                    query_parts.append(f"{key} == '{val}'")
-                else:
-                    query_parts.append(f"{key} == {val}") # for numeric values
-    
+            if val is not None:
+                clean_val = val.value if hasattr(val, 'value') else val
+                if key in ACCEPTED_VALUES and clean_val not in ACCEPTED_VALUES[key]:
+                    raise HTTPException(status_code=422, detail=f"Invalid value '{clean_val}' for filter '{key}'.")
+
+                if key in df.columns:
+                    if isinstance(clean_val, str):
+                        query_parts.append(f"{key} == '{clean_val}'")
+                    else:
+                        query_parts.append(f"{key} == {clean_val}")
+
         if query_parts:
             query_string = " and ".join(query_parts)
             return df.query(query_string)
         return df
-    
-
     def get_farm_loss_analysis(self, **filters):
 
         """
